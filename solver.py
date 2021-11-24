@@ -196,7 +196,7 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
             # If TargetSetMode is specified by user
             if "TargetSetMode" in compMethod:
                 if compMethod["TargetSetMode"] == "max":
-                    tmp_val = np.maximum(V_0.asnumpy(), constraint)
+                    tmp_val = np.maximum(V_0.asnumpy(), -constraint)
                 elif compMethod["TargetSetMode"] == "min":
                     tmp_val = np.minimum(V_0.asnumpy(), constraint)
                 # Update final result
@@ -204,9 +204,9 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
                 # Update input for next iteration
                 V_0 = hcl.asarray(tmp_val)
 
-             # Some information printing
-             print(t_minh)
-             print("Computational time to integrate (s): {:.5f}".format(time.time() - start))
+            # Some information printing
+            print(t_minh)
+            print("Computational time to integrate (s): {:.5f}".format(time.time() - start))
 
     # Time info printing
     print("Total kernel time (s): {:.5f}".format(execution_time))

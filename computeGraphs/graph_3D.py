@@ -120,7 +120,11 @@ def graph_3D(my_object, g, compMethod, accuracy):
                         dx_dt, dy_dt, dtheta_dt = my_object.dynamics(t, (x1[i], x2[j], x3[k]), uOpt, dOpt)
 
                         # Calculate Hamiltonian terms:
-                        V_new[i, j, k] = -(dx_dt * dV_dx[0] + dy_dt * dV_dy[0] + dtheta_dt * dV_dT[0])
+                        # TODO
+                        if compMethod == 'forward':
+                            V_new[i, j, k] = (dx_dt * dV_dx[0] + dy_dt * dV_dy[0] + dtheta_dt * dV_dT[0])
+                        else:
+                            V_new[i, j, k] = -(dx_dt * dV_dx[0] + dy_dt * dV_dy[0] + dtheta_dt * dV_dT[0])
                         #probe[i, j, k] = V_new[i, j, k]
 
                         # Get derivMin
@@ -303,6 +307,8 @@ def graph_3D(my_object, g, compMethod, accuracy):
             result = hcl.update(V_new, lambda i, j, k: minVWithVInit(i, j, k))
         if compMethod == 'maxVWithVInit':
             result = hcl.update(V_new, lambda i, j, k: maxVWithVInit(i, j, k))
+        if compMethod == 'forward':
+            result = hcl.update(V_new, lambda i, j, k: minVWithV0(i, j, k))
 
         # Copy V_new to V_init
         hcl.update(V_init, lambda i, j, k: V_new[i, j, k])

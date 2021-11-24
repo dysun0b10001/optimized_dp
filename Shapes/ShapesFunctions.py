@@ -39,6 +39,14 @@ def CylinderShape(grid, ignore_dims, center, radius):
 #                     data[i0, i1, i2, i3] = min(range_list)
 #     return data
 
+"""Creates an sphere with given center point and radius"""
+def ShapeSphere(grid, center, radius):
+    data = np.zeros(grid.pts_each_dim)
+    for i in range(grid.dims):
+        data = data + np.power(grid.xs[i] - center[i],2)
+    data = np.sqrt(data) - radius
+    return data
+
 def ShapeRectangle(grid, target_min, target_max):
     data = np.maximum(grid.vs[0] - target_max[0], -grid.vs[0] + target_min[0])
 
@@ -48,8 +56,8 @@ def ShapeRectangle(grid, target_min, target_max):
 
     return data
 
-def Rect_Around_Point(grid, target_point):
-    return ShapeRectangle(grid, target_point - 1.5 * grid.dx, target_point + 1.5 * grid.dx)
+def Rect_Around_Point(grid, target_point, scale=1.5):
+    return ShapeRectangle(grid, target_point - scale * grid.dx, target_point + scale * grid.dx)
 
 
 def Lower_Half_Space(grid, dim, value):
