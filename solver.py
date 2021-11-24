@@ -16,13 +16,10 @@ from TimeToReach.TimeToReach_4D import  *
 from TimeToReach.TimeToReach_5D import  *
 
 # Value Iteration library
-from TimeToReach.TimeToReach_3D import *
-from TimeToReach.TimeToReach_4D import *
 from valueIteration.value_iteration_3D import *
 from valueIteration.value_iteration_4D import *
 from valueIteration.value_iteration_5D import *
 from valueIteration.value_iteration_6D import *
-
 
 def solveValueIteration(MDP_obj):
     print("Welcome to optimized_dp \n")
@@ -66,10 +63,10 @@ def solveValueIteration(MDP_obj):
     t_s = time.time()
     if MDP_obj._bounds.shape[0] == 3:
         f(V_opt, actions, intermeds, trans, interpV, gamma, epsilon, iVals, sVals, bounds, goal, ptsEachDim, count,
-          maxIters, useNN, fillVal)
+            maxIters, useNN, fillVal)
     else:
         f(V_opt, actions, intermeds, trans, interpV, gamma, epsilon, iVals, sVals, bounds, goal, ptsEachDim, count,
-          maxIters, useNN)
+            maxIters, useNN)
     t_e = time.time()
 
     V = V_opt.asnumpy()
@@ -91,7 +88,6 @@ def solveValueIteration(MDP_obj):
     # MDP_obj.writeResults(V, dir_path, file_name, just_values=True)
     return V
 
-
 def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
              plot_option, accuracy="low", save_all_t=False):
     print("Welcome to optimized_dp \n")
@@ -100,6 +96,7 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
         constraint = multiple_value[1]
     else:
         init_value = multiple_value
+        constraint = None
     ################### PARSING ARGUMENTS FROM USERS #####################
 
     parser = ArgumentParser()
@@ -110,11 +107,21 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
 
     hcl.init()
     hcl.config.init_dtype = hcl.Float(32)
-
+    
     ################# INITIALIZE DATA TO BE INPUT INTO EXECUTABLE ##########################
 
     print("Initializing\n")
 
+    if constraint is None:
+        print("no obstacles!")
+    else: 
+        print('defining obstacles')
+        constraint_dim = constraint.ndim
+        if constraint_dim > grid.dims:
+            constraint_i = constraint[...,0]
+        else:
+            constraint_i = constraint
+    
     V_0 = hcl.asarray(init_value)
     V_1 = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
     l0 = hcl.asarray(init_value)
@@ -133,6 +140,7 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
     if grid.dims >= 6:
         list_x6 = np.reshape(grid.vs[5], grid.pts_each_dim[5])
 
+
     # Convert to hcl array type
     list_x1 = hcl.asarray(list_x1)
     list_x2 = hcl.asarray(list_x2)
@@ -144,7 +152,7 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
     if grid.dims >= 6:
         list_x6 = hcl.asarray(list_x6)
 
-    # Get executable
+    # Get executable, obstacle check initial value function
     if grid.dims == 3:
         solve_pde = graph_3D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
 
@@ -158,7 +166,7 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
         solve_pde = graph_6D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
 
     # Print out code for different backend
-    # print(solve_pde)
+    #print(solve_pde)
 
     ################ USE THE EXECUTABLE ############
     # Variables used for timing
@@ -166,8 +174,12 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
     iter = 0
     tNow = tau[0]
     print("Started running\n")
-    for i in range(1, len(tau)):
-        t_minh = hcl.asarray(np.array((tNow, tau[i])))
+    for i in range (1, len(tau)):
+        #tNow = tau[i-1]
+        t_minh= hcl.asarray(np.array((tNow, tau[i])))
+        # taking obstacle at each timestep
+        if "TargetSetMode" in compMethod and constraint_dim > grid.dims:
+            constraint_i = constraint[...,i]   
         while tNow <= tau[i] - 1e-4:
             tmp_arr = V_0.asnumpy()
             # Start timing
@@ -180,7 +192,7 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
             if grid.dims == 4:
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, t_minh, l0, probe)
             if grid.dims == 5:
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, t_minh, l0)
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5 ,t_minh, l0)
             if grid.dims == 6:
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6, t_minh, l0)
 
@@ -196,9 +208,9 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
             # If TargetSetMode is specified by user
             if "TargetSetMode" in compMethod:
                 if compMethod["TargetSetMode"] == "max":
-                    tmp_val = np.maximum(V_0.asnumpy(), -constraint)
+                    tmp_val = np.maximum(V_0.asnumpy(), -constraint_i)
                 elif compMethod["TargetSetMode"] == "min":
-                    tmp_val = np.minimum(V_0.asnumpy(), constraint)
+                    tmp_val = np.minimum(V_0.asnumpy(), -constraint_i)
                 # Update final result
                 V_1 = hcl.asarray(tmp_val)
                 # Update input for next iteration
@@ -290,7 +302,7 @@ def TTRSolver(dynamics_obj, grid, init_value, epsilon, plot_option):
         if grid.dims == 5:
             solve_TTR(V_0, list_x1, list_x2, list_x3, list_x4, list_x5)
         if grid.dims == 6:
-            solve_TTR(V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6)
+            solve_TTR(V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6 )
 
         error = np.max(np.abs(prev_val - V_0.asnumpy()))
         prev_val = V_0.asnumpy()
