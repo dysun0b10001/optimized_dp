@@ -84,3 +84,6 @@ class DubinsCar:
             self.x[2] += 2 * np.pi
         elif self.x[2] > np.pi:
             self.x[2] -= 2 * np.pi
+
+    def reset_state(self, x_init):
+        self.x = x_init
