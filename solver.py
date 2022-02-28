@@ -3,6 +3,7 @@ import numpy as np
 import time
 
 from Plots.plotting_utilities import *
+from plot_options import PlotOptions
 from argparse import ArgumentParser
 
 # Backward reachable set computation library
@@ -104,6 +105,9 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
     # # Print out LLVM option only
     # parser.add_argument("-l", "--llvm", default=False, type=bool)
     args = parser.parse_args()
+
+    if not isinstance(plot_option, PlotOptions):
+        args.plot = False
 
     hcl.init()
     hcl.config.init_dtype = hcl.Float(32)
