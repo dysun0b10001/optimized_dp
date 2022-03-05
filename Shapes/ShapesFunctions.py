@@ -1,5 +1,16 @@
 import numpy as np
 
+def Hyperplane(grid, normal, point):
+    # normalize the normal vector
+    normal = normal/np.linalg.norm(normal)
+
+    data = np.zeros(grid.pts_each_dim)
+    for i in range(grid.dims):
+        # n^T (x - p)
+        # point along the normal side will have neg value, vise versa
+        data = data + (grid.vs[i] - point[i])*normal[i]
+    return data
+
 def CylinderShape(grid, ignore_dims, center, radius):
     """Creates an axis align cylinder implicit surface function
 
