@@ -1,14 +1,15 @@
 import numpy as np
 
-def Hyperplane(grid, normal, point):
+def Hyperplane(grid, ignore_dims, normal, point):
     # normalize the normal vector
     normal = normal/np.linalg.norm(normal)
 
     data = np.zeros(grid.pts_each_dim)
     for i in range(grid.dims):
-        # n^T (x - p)
-        # point along the normal side will have neg value, vise versa
-        data = data + (grid.vs[i] - point[i])*normal[i]
+        if i not in ignore_dims:
+            # n^T (x - p)
+            # point along the normal side will have neg value, vise versa
+            data = data - (grid.vs[i] - point[i])*normal[i]
     return data
 
 def CylinderShape(grid, ignore_dims, center, radius):
@@ -30,6 +31,24 @@ def CylinderShape(grid, ignore_dims, center, radius):
             data = data + np.power(grid.vs[i] - center[i], 2)
     data = np.sqrt(data) - radius
     return data
+
+# def PillarShape(grid, ignore_dims, target_min, target_max):
+#     """Creates an axis align pillar implicit surface function
+#     """
+#     data = np.zeros(grid.pts_each_dim)
+#     for i in range(grid.dims):
+#         if i not in ignore_dims:
+#             # This works because of broadcasting
+#             data = data + np.power(grid.vs[i] - center[i], 2)
+#     data = np.sqrt(data) - radius
+
+#     data = np.maximum(grid.vs[0] - target_max[0], -grid.vs[0] + target_min[0])
+
+#     for i in range(grid.dims):
+#         data = np.maximum(data,  grid.vs[i] - target_max[i])
+#         data = np.maximum(data, -grid.vs[i] + target_min[i])
+
+#     return data
 
 # Range is a list of list of ranges
 # def Rectangle4D(grid, range):
