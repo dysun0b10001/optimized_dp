@@ -66,19 +66,19 @@ def InflatedBoundary3D(grid, map_dims, agent_size):
 
 def InflatedPillarShape3D(grid, target_min, target_max, agent_size):
     data = PillarShape(grid, [2], target_min, target_max)
-    # upright corner
+    # upright corners
     data = Union(data, CylinderShape(grid, [2], target_max, agent_size))
     # downright corner
-    data = Union(data, CylinderShape(grid, [2], [target_max[0],target_min[1]], agent_size))
+    data = Union(data, CylinderShape(grid, [2], [target_max[0],target_min[1], 0], agent_size))
     # downleft corner
-    data = Union(data, CylinderShape(grid, [2], target_min[1], agent_size))
+    data = Union(data, CylinderShape(grid, [2], target_min, agent_size))
     # upleft corner
-    data = Union(data, CylinderShape(grid, [2], [target_min[0],target_max[1]], agent_size))
+    data = Union(data, CylinderShape(grid, [2], [target_min[0],target_max[1], 0], agent_size))
 
     # inflate along two sides
-    data = Union(data, PillarShape(grid, [2], target_min - [agent_size, 0], target_max + [agent_size, 0]))
+    data = Union(data, PillarShape(grid, [2], np.array(target_min) - np.array([agent_size, 0, 0]), np.array(target_max) + np.array([agent_size, 0, 0])))
 
-    data = Union(data, PillarShape(grid, [2], target_min - [0, agent_size], target_max + [0, agent_size]))
+    data = Union(data, PillarShape(grid, [2], np.array(target_min) - np.array([0, agent_size, 0]), np.array(target_max) + np.array([0, agent_size,0])))
     return data
 
 # Range is a list of list of ranges
