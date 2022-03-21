@@ -32,23 +32,54 @@ def CylinderShape(grid, ignore_dims, center, radius):
     data = np.sqrt(data) - radius
     return data
 
-# def PillarShape(grid, ignore_dims, target_min, target_max):
-#     """Creates an axis align pillar implicit surface function
-#     """
-#     data = np.zeros(grid.pts_each_dim)
-#     for i in range(grid.dims):
-#         if i not in ignore_dims:
-#             # This works because of broadcasting
-#             data = data + np.power(grid.vs[i] - center[i], 2)
-#     data = np.sqrt(data) - radius
+def PillarShape(grid, ignore_dims, target_min, target_max):
+    """Creates an axis align pillar implicit surface function
+    """
+    init = False
+    for i in range(grid.dims):
+        if i not in ignore_dims:
+            if not init:
+                data = np.maximum(grid.vs[i] - target_max[i], -grid.vs[i] + target_min[i])
+                init = True
+            else:
+                # This works because of broadcasting
+                data = np.maximum(data,  grid.vs[i] - target_max[i])
+                data = np.maximum(data, -grid.vs[i] + target_min[i])
+    return data
 
-#     data = np.maximum(grid.vs[0] - target_max[0], -grid.vs[0] + target_min[0])
+def InflatedBoundary3D(grid, map_dims, agent_size):
+    data = np.zeros(grid.pts_each_dim)
+    # boarder
+    # up
+    up = Hyperplane(grid, [2], [0,1,0], [map_dims[0]-agent_size, map_dims[1]-agent_size, 0])
+    data = Union(data, up)
+    # right
+    right = Hyperplane(grid, [2], [1,0,0], [map_dims[0]-agent_size, map_dims[1]-agent_size, 0])
+    data = Union(data, right)
+    # down
+    down = Hyperplane(grid, [2], [0,-1,0], [agent_size, agent_size , 0])
+    data = Union(data, down)
+    # left
+    left = Hyperplane(grid, [2], [-1,0,0], [agent_size, agent_size , 0])
+    data = Union(data, left)
+    return data
 
-#     for i in range(grid.dims):
-#         data = np.maximum(data,  grid.vs[i] - target_max[i])
-#         data = np.maximum(data, -grid.vs[i] + target_min[i])
+def InflatedPillarShape3D(grid, target_min, target_max, agent_size):
+    data = PillarShape(grid, [2], target_min, target_max)
+    # upright corners
+    data = Union(data, CylinderShape(grid, [2], target_max, agent_size))
+    # downright corner
+    data = Union(data, CylinderShape(grid, [2], [target_max[0],target_min[1], 0], agent_size))
+    # downleft corner
+    data = Union(data, CylinderShape(grid, [2], target_min, agent_size))
+    # upleft corner
+    data = Union(data, CylinderShape(grid, [2], [target_min[0],target_max[1], 0], agent_size))
 
-#     return data
+    # inflate along two sides
+    data = Union(data, PillarShape(grid, [2], np.array(target_min) - np.array([agent_size, 0, 0]), np.array(target_max) + np.array([agent_size, 0, 0])))
+
+    data = Union(data, PillarShape(grid, [2], np.array(target_min) - np.array([0, agent_size, 0]), np.array(target_max) + np.array([0, agent_size,0])))
+    return data
 
 # Range is a list of list of ranges
 # def Rectangle4D(grid, range):
