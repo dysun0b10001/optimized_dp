@@ -90,7 +90,7 @@ def solveValueIteration(MDP_obj):
     return V
 
 def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
-             plot_option, accuracy="low", save_all_t=False):
+             plot_option, accuracy="low", save_all_t=False, state_of_interest = None):
     print("Welcome to optimized_dp \n")
     if type(multiple_value) == list:
         init_value = multiple_value[0]
@@ -219,10 +219,17 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
                 V_1 = hcl.asarray(tmp_val)
                 # Update input for next iteration
                 V_0 = hcl.asarray(tmp_val)
-
-            # Some information printing
-            print(t_minh)
-            print("Computational time to integrate (s): {:.5f}".format(time.time() - start))
+                
+        # earily stop in calculation
+        # TODO timebound 
+        if state_of_interest is not None:
+            val = grid.get_value(V_all_t[..., i], state_of_interest)
+            print(val<0)
+            if val<0:
+                break
+            # # Some information printing
+            # print(t_minh)
+            # print("Computational time to integrate (s): {:.5f}".format(time.time() - start))
 
     # Time info printing
     print("Total kernel time (s): {:.5f}".format(execution_time))
