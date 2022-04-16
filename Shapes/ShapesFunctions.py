@@ -48,11 +48,11 @@ def PillarShape(grid, ignore_dims, target_min, target_max):
     return data
 
 def InflatedBoundary3D(grid, map_dims, agent_size):
-    data = np.zeros(grid.pts_each_dim)
+
     # boarder
     # up
     up = Hyperplane(grid, [2], [0,1,0], [map_dims[0]-agent_size, map_dims[1]-agent_size, 0])
-    data = Union(data, up)
+    data = up
     # right
     right = Hyperplane(grid, [2], [1,0,0], [map_dims[0]-agent_size, map_dims[1]-agent_size, 0])
     data = Union(data, right)
