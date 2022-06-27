@@ -255,8 +255,14 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
     return V_1.asnumpy(), solve_pde
 
 
-def TTRSolver(dynamics_obj, grid, init_value, epsilon, plot_option):
+def TTRSolver(dynamics_obj, grid, multiple_value, epsilon, plot_option):
     print("Welcome to optimized_dp \n")
+    if type(multiple_value) == list:
+        init_value = multiple_value[0]
+        constraint = multiple_value[1]
+    else:
+        init_value = multiple_value
+        constraint = None
     ################# INITIALIZE DATA TO BE INPUT INTO EXECUTABLE ##########################
 
     print("Initializing\n")
@@ -267,7 +273,14 @@ def TTRSolver(dynamics_obj, grid, init_value, epsilon, plot_option):
     init_value[init_value < 0] = 0
     init_value[init_value > 0] = 1000
     V_0 = hcl.asarray(init_value)
-    prev_val = np.zeros(init_value.shape)
+    if constraint is not None:
+        # The constraint is reversed
+        constraint[-constraint < 0] = 0
+        constraint[-constraint > 0] = 1000
+        prev_val = np.maximum(np.zeros(init_value.shape), constraint)
+    else:
+        prev_val = np.zeros(init_value.shape)
+    
 
     # Re-shape states vector
     list_x1 = np.reshape(grid.vs[0], grid.pts_each_dim[0])
@@ -322,6 +335,10 @@ def TTRSolver(dynamics_obj, grid, init_value, epsilon, plot_option):
         if grid.dims == 6:
             solve_TTR(V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6 )
 
+        if constraint is not None:
+            tmp_val = np.maximum(V_0.asnumpy(), constraint)
+            V_0 = hcl.asarray(tmp_val)
+                
         error = np.max(np.abs(prev_val - V_0.asnumpy()))
         prev_val = V_0.asnumpy()
     print("Total TTR computation time (s): {:.5f}".format(time.time() - start))
