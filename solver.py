@@ -90,7 +90,7 @@ def solveValueIteration(MDP_obj):
     return V
 
 def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
-             plot_option, accuracy="low", save_all_t=False, state_of_interest = None, limit_on_arrival = None):
+             plot_option, accuracy="low", save_all_t=False, state_of_interest = None, arriveAfter = None, solve_pde = None):
     print("Welcome to optimized_dp \n")
     if type(multiple_value) == list:
         init_value = multiple_value[0]
@@ -157,18 +157,21 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
         list_x6 = hcl.asarray(list_x6)
 
     # Get executable, obstacle check initial value function
-    if grid.dims == 3:
-        solve_pde = graph_3D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
+    t = time.time()
+    if solve_pde is None:
+        if grid.dims == 3:
+            solve_pde = graph_3D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
 
-    if grid.dims == 4:
-        solve_pde = graph_4D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
+        if grid.dims == 4:
+            solve_pde = graph_4D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
 
-    if grid.dims == 5:
-        solve_pde = graph_5D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
+        if grid.dims == 5:
+            solve_pde = graph_5D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
 
-    if grid.dims == 6:
-        solve_pde = graph_6D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
+        if grid.dims == 6:
+            solve_pde = graph_6D(dynamics_obj, grid, compMethod["PrevSetsMode"], accuracy)
 
+    print(f"time consumed to get executable {time.time() - t}")
     # Print out code for different backend
     #print(solve_pde)
 
@@ -224,8 +227,8 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
         if state_of_interest is not None:
             val = grid.get_value(V_all_t[..., i], state_of_interest)
             print(val<0)
-            if limit_on_arrival is not None:
-                if i > limit_on_arrival and val<0:
+            if arriveAfter is not None:
+                if i > arriveAfter and val<0:
                     break
             else:
                 if val<0:
@@ -246,10 +249,10 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
         # plot_isosurface(g, my_V, [0, 1, 3], 10)
 
     if save_all_t:
-        return V_all_t
+        return V_all_t, solve_pde
 
 
-    return V_1.asnumpy()
+    return V_1.asnumpy(), solve_pde
 
 
 def TTRSolver(dynamics_obj, grid, init_value, epsilon, plot_option):
