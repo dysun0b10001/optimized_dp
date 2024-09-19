@@ -152,7 +152,19 @@ def compute_opt_traj(dynamics, grids, values_all, tau, state):
         negToPos, posToNeg = find_sign_change(grids, values_all, current_state, tau)
         n2p_log.append(negToPos)
 
-        if negToPos.size != 0:
+        
+        if negToPos.size == 0:
+            # no brat edges detected
+            current_value = grids.get_value(values_all[..., iter], current_state)
+            if current_value < 0:
+            # the agent has arrived at the target
+                traj[iter:] = np.array(current_state)
+                v_log[iter:] = np.array(current_value)
+                break
+            else:
+                # print("Warning, planning continues but the agent is out of the BRAT")
+                t_earliest = iter
+        else:
             # the agent has not arrived at the target
             current_value = grids.get_value(values_all[..., iter], current_state)
             if current_value <= 0:  # the agent is within the BRT/BRS
@@ -166,30 +178,27 @@ def compute_opt_traj(dynamics, grids, values_all, tau, state):
                         t_earliest = value
                         break
 
-            t.append(tau[iter])
-            t_next = t_earliest + 1
+        t.append(tau[iter])
+        t_next = t_earliest + 1
 
-            if t_next > values_all.shape[-1] - 1:
-                t_next = values_all.shape[-1] - 1
+        if t_next > values_all.shape[-1] - 1:
+            t_next = values_all.shape[-1] - 1
 
-            # calculate the control inputs
-            values = values_all[..., [t_earliest]]
-            spat_deriv_vector = spa_deriv(grids.get_index(current_state), values, grids)
-            current_u = dynamics.optCtrl_inPython(spat_deriv_vector)
-            current_d = dynamics.optDstb_inPython(spat_deriv_vector)
-            opt_u.append(current_u)
-            opt_d.append(current_d)
+        # calculate the control inputs
+        values = values_all[..., [t_earliest]]
+        spat_deriv_vector = spa_deriv(grids.get_index(current_state), values, grids)
+        current_u = dynamics.optCtrl_inPython(spat_deriv_vector)
+        current_d = dynamics.optDstb_inPython(spat_deriv_vector)
+        opt_u.append(current_u)
+        opt_d.append(current_d)
 
-            # apply the control and update the current_state
-            next_state = next_position(dynamics, current_state, current_u, current_d, dt)
-            current_state = next_state
-            t_earlist_log.append(t_earliest)
-            v_log.append(grids.get_value(values_all[..., iter], current_state))
-            if iter != values_all.shape[-1]:
-                traj[iter] = np.array(current_state)
-        else:  
-            # the agent has arrived at the target
-            traj[iter:] = np.array(current_state)
-            break
+        # apply the control and update the current_state
+        next_state = next_position(dynamics, current_state, current_u, current_d, dt)
+        current_state = next_state
+        t_earlist_log.append(t_earliest)
+        v_log.append(grids.get_value(values_all[..., iter], current_state))
+        if iter != values_all.shape[-1]:
+            traj[iter] = np.array(current_state)
+
 
     return traj, opt_u, opt_d, t
